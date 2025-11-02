@@ -17,10 +17,7 @@ const Stars = ({ value }: { value: number }) => {
 const PropertyDetail: React.FC<{ property: PropertyProps }> = ({ property }) => {
   const [tab, setTab] = useState<TabKey>("offer");
 
-  // 5-photo collage (fallback uses the single image)
   const imgs = [property.image, property.image, property.image, property.image, property.image];
-
-  // Minimal description (your interface doesn’t define one)
   const description = `Enjoy a comfortable stay in ${property.address.city}, ${property.address.country}. Close to attractions and equipped with essentials for a great visit.`;
 
   return (
@@ -77,7 +74,7 @@ const PropertyDetail: React.FC<{ property: PropertyProps }> = ({ property }) => 
         <p className="mt-2 text-gray-700 leading-relaxed">{description}</p>
       </div>
 
-      {/* Tab body (kept minimal per brief) */}
+      {/* Tab body  */}
       <div className="mt-6">
         {tab === "offer" && (
           <section>
@@ -95,7 +92,7 @@ const PropertyDetail: React.FC<{ property: PropertyProps }> = ({ property }) => 
         {tab === "host" && <p className="text-gray-600">Host details not provided.</p>}
       </div>
 
-      {/* “What this place offer” section (like mockup) */}
+      {/* “What this place offer” */}
       <div className="mt-8">
         <h2 className="text-2xl font-semibold">What this place offer</h2>
         <p className="text-sm text-gray-500 mt-1">
