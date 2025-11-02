@@ -1,6 +1,7 @@
 // pages/index.tsx
-import { useMemo, useState } from "react";
-import { HERO_BG, FILTER_LABELS, PROPERTYLISTINGSAMPLE } from "@/constants";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { HERO_BG, FILTER_LABELS } from "@/constants";
 import type { PropertyProps } from "@/interfaces";
 import Pill from "@/components/common/Pill";
 import PropertyCard from "@/components/common/Card";
@@ -10,47 +11,61 @@ const includesCI = (arr: string[], needle: string) =>
   arr.map((x) => x.toLowerCase()).includes(needle.toLowerCase());
 
 const FILTERS: Record<string, (p: PropertyProps) => boolean> = {
-  // Consider "Top Villa" as high-rated and/or villa-ish
   "Top Villa": (p) =>
     p.rating >= 4.85 || p.category.some((c) => /luxury|villa/i.test(c)),
-
   "Self Checkin": (p) => p.category.some((c) => /self\s*checkin/i.test(c)),
-
-  // Use presence of a discount as a proxy for “Free Reschedule”
   "Free Reschedule": (p) => !!p.discount && p.discount !== "",
-
-  // Placeholders (no-op) unless you later wire real flags
   "Book Now, Pay Later": () => true,
   "Instant Book": () => true,
-
   Pool: (p) => p.category.some((c) => /pool/i.test(c)),
 };
 
-/* If a label isn't in FILTERS, fall back to category match */
 const getPredicate = (label: string) =>
   FILTERS[label] ?? ((p: PropertyProps) => includesCI(p.category, label));
 
 export default function HomePage() {
   const [selected, setSelected] = useState<string[]>([]);
+  const [properties, setProperties] = useState<PropertyProps[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const toggle = (label: string) =>
     setSelected((cur) =>
       cur.includes(label) ? cur.filter((x) => x !== label) : [...cur, label]
     );
 
-  // Clean up accidental leading/trailing spaces in constants
+  // Fetch properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await axios.get("/api/properties");
+        setProperties(response.data);
+      } catch (err) {
+        console.error("Error fetching properties:", err);
+        setError("Failed to load properties.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProperties();
+  }, []);
+
+  // Filter badges cleanup
   const FILTERS_CLEAN = useMemo(() => FILTER_LABELS.map((l) => l.trim()), []);
 
-  // AND logic: property must satisfy ALL selected filters
+  // Filtered properties
   const filtered: PropertyProps[] = useMemo(() => {
-    if (selected.length === 0) return PROPERTYLISTINGSAMPLE;
-    return PROPERTYLISTINGSAMPLE.filter((p) =>
+    if (selected.length === 0) return properties;
+    return properties.filter((p) =>
       selected.every((label) => getPredicate(label)(p))
     );
-  }, [selected]);
+  }, [properties, selected]);
 
-  // Which filter badges apply to a property (shown on each card)
   const getBadgesFor = (p: PropertyProps) =>
     FILTERS_CLEAN.filter((label) => getPredicate(label)(p)).slice(0, 3);
+
+  if (loading) return <p className="text-center mt-10">Loading properties...</p>;
+  if (error) return <p className="text-center mt-10 text-red-600">{error}</p>;
 
   return (
     <>
